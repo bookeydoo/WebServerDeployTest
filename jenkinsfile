@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'waleedamgad/serverdeploytask'
+        DOCKER_IMAGE = 'waleedamgad/webapp_private'   // private repo
         IMAGE_TAG = "1.0"
     }
 
@@ -51,7 +51,7 @@ pipeline {
         
         stage("Push to DockerHub") {
             steps {
-                echo "Pushing image to DockerHub"                
+                echo "Pushing image to private repo on DockerHub"                
                 sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 sh "docker push ${DOCKER_IMAGE}:latest"
             }
