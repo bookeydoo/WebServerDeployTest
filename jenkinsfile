@@ -56,7 +56,31 @@ pipeline {
                 sh "docker push ${DOCKER_IMAGE}:latest"
             }
         }
+
+        stage("Deploy to Machine"){
+            steps{
+                echo"Deploying container on machine"
+                sshagent("SSH_ID"){
+                    ssh'''
+                        ssh -o StrictHostKeyChecking=no my-user@149.0.110.223 << EOF
+                        echo "logging into docker hub"
+                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+
+                        echo "pulling"
+                        docker pull ${DOCKER_IMAGE}:${IMAGE_TAG}
+
+                        echo "removing old cont"
+                        docker rm -f webapp || true
+
+                        echo "Starting new container..."
+                        docker run -d --name webapp -p 80:80 ${DOCKER_IMAGE}:${IMAGE_TAG}
+                        EOF
+                       '''
+                }
+            }
+        }
     }
+
     
     post {
         always {
