@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE = 'waleedamgad/serverdeploytask'
+        IMAGE_TAG = "1.0"
+    }
+
+    stages {
+        stage("Checkout") {
+            steps {
+                echo "========executing Checkout========"
+                checkout scm
+            }
+            post {
+                success {
+                    echo "========Checkout executed successfully========"
+                }
+                failure {
+                    echo "========checkout execution failed========"
+                }
+            }
+        }
+        
+        stage("Build Docker Image") {
+            steps {
+                echo "Building image"
+                script {
+                    docker.build("${DOCKER_IMAGE}:${IMAGE_TAG}")
+                    docker.build("${DOCKER_IMAGE}:latest")
+                }
+            }
+            post {
+                success {
+                    echo "Image built successfully"
+                }
+                failure {
+                    echo "Image build failed"
+                }
+            }
+        }
+        
+        stage("Login to DockerHub") {
+            steps {
+                echo "Logging in to DockerHub"                
+                sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+            }
+        }
+        
+        stage("Push to DockerHub") {
+            steps {
+                echo "Pushing image to DockerHub"                
+                sh "docker push ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                sh "docker push ${DOCKER_IMAGE}:latest"
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "Cleaning up"
+            sh 'docker logout'
+        }
+        success {
+            echo "========pipeline executed successfully ========"
+        }
+        failure {
+            echo "========pipeline execution failed========"
+        }
+    }
+}
